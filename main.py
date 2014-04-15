@@ -3,6 +3,7 @@ Created by Julian Ramos
 CMU - 4/3/14
 Model selection using unlabeled data
 '''
+from scipy.stats import spearmanr
 import numpy as np
 from sklearn.datasets import  load_boston, load_iris, load_diabetes, load_digits, load_linnerud
 from sklearn.naive_bayes import GaussianNB
@@ -12,8 +13,8 @@ import funcs as fun
 
 datasets={'boston':load_boston(),'iris':load_iris(),'diabetes':load_diabetes(),'digits':load_digits(),'linnerud':load_linnerud()}
 
-data=datasets['digits']['data']
-labels=datasets['digits']['target']
+data=datasets['digits']['data']#[0:135,:]
+labels=datasets['digits']['target']#[0:135]
 
 #Divide the data in training, testing and validation
 
@@ -33,9 +34,44 @@ valData=data[valInds]
 valTarget=labels[valInds]
 
 clfs=fun.clfsEval(trainData,testData,valData,trainTarget,testTarget,valTarget)
+agmntLabels,agmntLevels=fun.agreementRates(clfs,valTarget)
+fun.clfsVal(clfs,agmntLabels,agmntLevels,agmntLvl=0.0)
+f1_score_agmnt=f1_score(valTarget,agmntLabels)
+print(clfs['f1_score_test'],'f1 score test data')
+print(clfs['f1_score_val'],'f1 score validation data')
+print(clfs['f1_score_agmnt'],'f1 score agmnt data')
+print(f1_score_agmnt,'f1_score validation and agmntLabels')
 
-print(clfs)
+#IN this section I have to consider when there are 
+#ties between multiple classifiers
 
+
+rVal=np.argsort(clfs['f1_score_val'])[::-1]
+rAgmnt=np.argsort(clfs['f1_score_agmnt'])[::-1]
+
+rankVal=range(len(rVal))
+rankAgmnt=[int(np.argwhere(rVal==i)) for i in rAgmnt]
+
+print(rVal)
+print(rAgmnt)
+
+rankVal=np.array(rankVal)+1
+rankAgmnt=np.array(rankAgmnt)+1
+
+print(rankVal)
+print(rankAgmnt)
+print(spearmanr(rankVal,rankAgmnt))
+
+
+
+# Now I can rank the classifiers using the validation data and validation results
+# and compare that ranking to the one generated with the agmntLabels with those two
+# ranks I can use the spearman's ranking to compute whether the two rankings are
+# correlated or not I could also use the kappa's statistic to measure this
+
+
+
+# print(clfs)
 # #Naive Bayes model
 # gnb=GaussianNB()
 # y_gnb = gnb.fit(trainData, trainTarget).predict(testData)
@@ -68,7 +104,6 @@ print(clfs)
 # print('accuracy on the agreed data',sum(val_ag==valTarget[indsAg])/float(len(val_ag)))
 # print('f1_score on the agreed data',f1_score(val_ag,valTarget[indsAg]))
 # print('data points used ',len(val_ag),' out of ',len(ag))
-# 
-# 
+
 
 
