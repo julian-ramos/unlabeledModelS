@@ -13,6 +13,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
 import matplotlib.pylab as plt
+from sklearn.metrics import classification_report
 
 
 
@@ -21,7 +22,9 @@ def clfsEval(trainData,testData,valData,trainLabels,testLabels,valLabels):
     This function takes the data sets and build several classifiers
     then they are all evaluated
     '''
-    clf={'classifier':[],'pred_test':[],'f1_score_test':[],'pred_val':[],'f1_score_val':[]}
+    clf={'classifier':[],'pred_test':[],'f1_score_test':[],'pred_val':[],\
+         'f1_score_val':[],'confusion_matrix_test':[],'confusion_matrix_val':[],\
+         'report_test':[],'report_val':[]}
     clfs=[GaussianNB(),
           linear_model.LogisticRegression(),
           svm.SVC(),
@@ -34,11 +37,13 @@ def clfsEval(trainData,testData,valData,trainLabels,testLabels,valLabels):
         tempClf.fit(trainData, trainLabels)
         clf['pred_test'].append(tempClf.predict(testData))
         clf['f1_score_test'].append(f1_score(testLabels,clf['pred_test'][i]))
+        clf['confusion_matrix_test'].append(confusion_matrix(testLabels,clf['pred_test'][i]))
+        clf['report_test'].append(classification_report(testLabels,clf['pred_test'][i]))
         clf['pred_val'].append(tempClf.predict(valData))
         clf['f1_score_val'].append(f1_score(valLabels,clf['pred_val'][i]))
-#         print('predicted 1',clf['pred_val'][-1])
-#     print(valLabels)
-    #Here work on getting the agreement rates for all of the classifiers
+        clf['confusion_matrix_val'].append(confusion_matrix(valLabels,clf['pred_val'][i]))
+        clf['report_val'].append(classification_report(valLabels,clf['pred_val'][i]))
+
     
     return clf
 
