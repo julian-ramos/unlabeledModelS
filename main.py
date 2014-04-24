@@ -24,71 +24,71 @@ exec(expe['variables'])
 data=expe['data']
 labels=expe['labels']
 cont=0
-
+ranks=[]
+f1_score_mv_predval_agmnt=[]
 
 while cont<expe['numTests']:
     
-    try:
-        #Divide the data in training, testing and validation
+    #Divide the data in training, testing and validation
+    splitData=dmlPre.dataSplitBalancedClass(data, labels)
+    trainData=splitData['trainData']
+    trainLabels=splitData['trainLabels']
+    testData=splitData['testData']
+    testLabels=splitData['testLabels']
+    valData=splitData['valData']
+    valLabels=splitData['valLabels']
+    uLabels=np.unique(np.hstack((np.unique(trainLabels),np.unique(testLabels),np.unique(valLabels))))
+    
+    #Train the different classifiers and predict for the testing and validation data sets
+    clfs=fun.clfsEval(trainData,testData,valData,trainLabels,testLabels,valLabels,uLabels)
+    
+    #Calculates the majority vote and the agreement rate for all of the classifiers
+    mvLabels,agmntLevels=fun.agreementRates(clfs,valLabels,uLabels,plot=expe['plots'])
+    
+    #Calculates the f1_scores for the majority vote labels and the predicted outputs
+    #from the different classifiers
+    fun.clfsVal(clfs,mvLabels,agmntLevels,uLabels)
+    f1_score_agmnt=f1_score(valLabels,mvLabels,labels=uLabels)
+    
+    
+    if expe['verbose']==1:
+        confusion_agmnt=confusion_matrix(valLabels,mvLabels)
+        print('Agreement level used for filtering = %d'%(expe['agmntlvl']))
+        print('summary of results validation data')
+        print(clfs['report_val'][0])
+        
+        print('summary of results agreement data')
+        print(classification_report(valLabels,mvLabels))
+        
+        print('f1 score test data',clfs['f1_score_test'])
+        print('f1 score validation data',clfs['f1_score_val'])
+        print('f1 score agmnt data',clfs['f1_score_agmnt'])
+        # print(clfs['confusion_matrix_val'],'confusion matrix val')
+        # print(confusion_agmnt,'confusion matrix agmnt')
+        print('f1_score validation and mvLabels',f1_score_agmnt)
+    
+    fun.spearmansCalc(clfs)
+        
+    if expe['verbose']==1:
+        print('models ordered by f1_score')
+        print(rVal)
+        print(rAgmnt)
+        print('models ranking')
+        print(rankVal)
+        print(rankAgmnt)
+        
+    spear.append(clfs['spearmans'])
+    ranks.append(clfs['rank_mv_predval_agmnt'])
+    cont+=1
+    print('iteration',cont)
+    if f1_score_mv_predval_agmnt==[]:
+        f1_score_mv_predval_agmnt=[[] for i in range(len(clfs['f1_score_mv_predval_agmnt']))]
+    for i in range(len(clfs['f1_score_mv_predval_agmnt'])):
+        f1_score_mv_predval_agmnt[i]=f1_score_mv_predval_agmnt[i]+[clfs['f1_score_mv_predval_agmnt'][i]]
+    
+# valRank=clfs['']
+fun.summaryGraphs(f1_score_mv_predval_agmnt,len(clfs['classifier']),spear,ranks)
 
-        splitData=dmlPre.dataSplitBalancedClass(data, labels)
-        trainData=splitData['trainData']
-        trainLabels=splitData['trainLabels']
-        testData=splitData['testData']
-        testLabels=splitData['testLabels']
-        valData=splitData['valData']
-        valLabels=splitData['valLabels']
-        uLabels=np.unique(np.hstack((np.unique(trainLabels),np.unique(testLabels),np.unique(valLabels))))
-        
-        clfs=fun.clfsEval(trainData,testData,valData,trainLabels,testLabels,valLabels,uLabels)
-        agmntLabels,agmntLevels=fun.agreementRates(clfs,valLabels,uLabels,plot=True)
-        fun.clfsVal(clfs,agmntLabels,agmntLevels,uLabels,agmntLvl=expe['agmntlvl'])
-        f1_score_agmnt=f1_score(valLabels,agmntLabels,labels=uLabels)
-        confusion_agmnt=confusion_matrix(valLabels,agmntLabels)
-        
-        if expe['verbose']==1:
-            print('Agreement level used for filtering = %d'%(expe['agmntlvl']))
-            print('summary of results validation data')
-            print(clfs['report_val'][0])
-            
-            print('summary of results agreement data')
-            print(classification_report(valLabels,agmntLabels))
-            
-            print('f1 score test data',clfs['f1_score_test'])
-            print('f1 score validation data',clfs['f1_score_val'])
-            print('f1 score agmnt data',clfs['f1_score_agmnt'])
-            # print(clfs['confusion_matrix_val'],'confusion matrix val')
-            # print(confusion_agmnt,'confusion matrix agmnt')
-            print('f1_score validation and agmntLabels',f1_score_agmnt)
-        
-        
-        #In this section I have to consider when there are 
-        #ties between multiple classifiers
-        rVal=np.argsort(clfs['f1_score_val'])[::-1]
-        rAgmnt=np.argsort(clfs['f1_score_agmnt'])[::-1]
-        
-        rankVal=range(len(rVal))
-        rankAgmnt=[int(np.argwhere(rVal==i)) for i in rAgmnt]
-
-        rankVal=np.array(rankVal)+1
-        rankAgmnt=np.array(rankAgmnt)+1
-        spearmans=spearmanr(rankVal,rankAgmnt)
-        
-        if expe['verbose']==1:
-            print('models ordered by f1_score')
-            print(rVal)
-            print(rAgmnt)
-            print('models ranking')
-            print(rankVal)
-            print(rankAgmnt)
-            print(spearmans,'spearman rank correlation coefficient' )
-        
-        
-        spear.append(spearmans)
-        cont+=1
-    except:
-        print('Failed trying again')
-print spear
 
 
 # It seems like everything is working fine, what I need to do next is:
