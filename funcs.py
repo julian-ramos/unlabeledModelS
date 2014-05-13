@@ -3,6 +3,7 @@ Created by Julian Ramos
 CMU - 4/3/14
 Model selection using unlabeled data
 '''
+import dataSearchUtils as dSu
 import dataReader as dR
 from scipy.stats import spearmanr
 import numpy as np
@@ -20,17 +21,31 @@ def dataExtract(filename):
     '''
     Extracts the data for the activity recognition study
     '''
-    print('remember to ask Jin about the missing data and how to extract it from the data set')
+    
     tempData=dR.csvReader(filename)
     data=[]
     labels=[]
     
+    features=tempData['header'][2][3:]
+    
     for vals in tempData['data']:
         data.append([float(i) for i in vals[3:]])
         labels.append(int(vals[0]))
+        
+        
+    #Excluding missing data and the missing features
+    inds=dSu.listStrFind(features, 'm_')
+    ind=min(inds)
+    
+    #Missing data extraction
+    features=features[:ind]
     data=np.array(data)
+    missingData=np.sum(data[:,ind:-1],1)
+    rows=np.argwhere(missingData==8).ravel()
+    data=data[rows,:ind]
     labels=np.array(labels)
-    return data,labels
+    labels=labels[rows]
+    return data,labels,features
     
         
     
@@ -41,6 +56,7 @@ def clfsEval(trainData,testData,valData,trainLabels,testLabels,valLabels,uLabels
     '''
     This function takes the data sets and builds several classifiers
     then they are all evaluated
+    ClassN=1 means it will only run the specified classifier
     '''
 
     
@@ -71,6 +87,29 @@ def clfsEval(trainData,testData,valData,trainLabels,testLabels,valLabels,uLabels
 
     
     return clf
+def majorityVote(clfs,testingData,testingLabels,ignore=[]):
+    '''
+    This function takes a set of previously built classifiers and calculates the
+    majority vote for a given testing data set as well some performance measures related with
+    the majority vote itself
+    ignore is a list of the indexes of the classifiers to be ignored
+    '''
+    votes=[]
+    
+    for i in range(len(clfs)):
+        if i not in ignore:
+            temp=clfs[i]['classifier'][0].predict(testingData)
+            votes.append(temp)
+    print('here')
+    
+    #Currently the prediction is working fine now I have to write a function
+    #that can calculate the majority vote and the agreement rate
+    #for each of the columns in tempALl
+    
+    
+    
+    
+    
 
 def agreementRates(clf,valLabels,uLabels,plot=False):
     '''
