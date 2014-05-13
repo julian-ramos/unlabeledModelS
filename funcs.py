@@ -3,6 +3,7 @@ Created by Julian Ramos
 CMU - 4/3/14
 Model selection using unlabeled data
 '''
+import dataReader as dR
 from scipy.stats import spearmanr
 import numpy as np
 import dataStats as dS
@@ -15,24 +16,45 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pylab as plt
 from sklearn.metrics import classification_report
 
+def dataExtract(filename):
+    '''
+    Extracts the data for the activity recognition study
+    '''
+    print('remember to ask Jin about the missing data and how to extract it from the data set')
+    tempData=dR.csvReader(filename)
+    data=[]
+    labels=[]
+    
+    for vals in tempData['data']:
+        data.append([float(i) for i in vals[3:]])
+        labels.append(int(vals[0]))
+    data=np.array(data)
+    labels=np.array(labels)
+    return data,labels
+    
+        
+    
+    
+    
 
-
-def clfsEval(trainData,testData,valData,trainLabels,testLabels,valLabels,uLabels):
+def clfsEval(trainData,testData,valData,trainLabels,testLabels,valLabels,uLabels,classN=None):
     '''
     This function takes the data sets and builds several classifiers
     then they are all evaluated
     '''
-#     uLabels=np.hstack((np.unique(trainLabels),np.unique(testLabels),np.unique(valLabels)))
-#     uLabels=np.unique(uLabels)
+
     
     clf={'classifier':[],'pred_test':[],'f1_score_test_predtest':[],'pred_val':[],\
          'f1_score_val_predval':[],'confusion_matrix_test':[],'confusion_matrix_val':[],\
          'report_test':[],'report_val':[]}
-    clfs=[GaussianNB(),
-          linear_model.LogisticRegression(),
-          svm.SVC(),
-          tree.DecisionTreeClassifier(),
-          SGDClassifier()]
+    if classN==None:
+        clfs=[GaussianNB(),
+              linear_model.LogisticRegression(),
+              svm.SVC(),
+              tree.DecisionTreeClassifier(),
+              SGDClassifier()]
+    else:
+        clfs=[linear_model.LogisticRegression()]
     
     for i in range(len(clfs)):
         clf['classifier'].append(clfs[i])
@@ -174,16 +196,26 @@ def spearmansCalc(clfs):
         clfs['spearmans'].append(spearmanr(rankVal,rankAgmnt))
     
 
-def summaryGraphs(f1_score_mv_predval_agmnt,classifiersNum,spear,ranks):
+def summaryGraphs(f1_score_mv_predval_agmnt,classifiersNum,spear,ranks,bestF1s,agmntLevels):
+    bestF1s=np.array(bestF1s)
     data=[]
     tData=[]
     spears=[]
     plt.hold(True)
-    for i in range(len(f1_score_mv_predval_agmnt)):
+    
+    
+    
+    for i in range(len(spear)):
         if spears==[]:
-            spears=np.array(spear)[i,:,0]
+            try:
+                spears=np.array(spear[i])[:,0]
+            except:
+                print('problem')
         else:
-            spears=np.vstack((spears,(np.array(spear)[i,:,0])))
+            try:
+                spears=np.vstack((spears,(np.array(spear[i])[:,0])))
+            except:
+                print('problem')
     
     for i2 in range(classifiersNum):
         data=[]
@@ -198,7 +230,12 @@ def summaryGraphs(f1_score_mv_predval_agmnt,classifiersNum,spear,ranks):
         plt.errorbar(range(1,1+len(f1_score_mv_predval_agmnt)),np.mean(data,0),yerr=np.std(data,0),label='clf %d'%(i2))
     plt.errorbar(range(1,1+len(f1_score_mv_predval_agmnt)),np.mean(spears,0),yerr=np.std(spears,0),label="spearman's")
 #     plt.boxplot(tData)
+    plt.errorbar(range(1,1+np.shape(bestF1s)[1]),np.mean(bestF1s,0),yerr=np.std(bestF1s,0),label='f1_score best model')
     plt.legend(loc=3)
+#     ax=plt.gca()
+#     labels = [item.get_text() for item in ax.get_xticklabels()]
+#     ax.set_xticklabels([str(i) for i in agmntLevels])
+    plt.xticks(range(1,1+np.shape(bestF1s)[1]),[str(i) for i in agmntLevels])
     plt.show()
     
     #Now I have to add to the code a way to plot the mode of the ranks for each agreement level, the
