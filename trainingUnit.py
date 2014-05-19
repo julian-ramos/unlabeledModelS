@@ -4,7 +4,7 @@
 #for a leave one user out scheme
 # Copyright (C) Julian Ramos 2014
 #===============================================================================
-
+from sklearn.metrics import f1_score
 import dataSearchUtils as dSu
 import funcs as fun
 import dataReader as dR
@@ -18,8 +18,12 @@ modelsPath='F:/Activity_RS/Last data set/FeatureDataset/models'
 dataPath='F:/Activity_RS/Last data set/FeatureDataset/modelSelectionProjectData'
 filesList=os.listdir(dataPath)
 clfs=[]
+# This options tell the program to split the data into testing,training and validation data 
+#sets 
 testAndVal=False
-
+# This option cuts out the quantity of classifiers to only 3 for fast evaluation
+fast=False
+cont=0
 if testAndVal:
     print('training,testing and validation data sets are going to be created')
 else:
@@ -83,6 +87,9 @@ else:
             tempClf=fun.clfsEval(data,data[:100,],data[100:200,:],labels,labels[:100],labels[100:200],uLabels,classN=1)
             #There's no need to store the data
         clfs.append(tempClf)
+        cont+=1
+        if cont==6 and fast==True:
+            break
         
 
     # Storing all the classifiers and results
@@ -109,7 +116,8 @@ else:
 #             mvAll.append(clfs[cId]['classifier'].predict(allData['trainData'][uId]))
 # 
 
-
+print('computing agreement levels...')
+summary={'mv':[],'agmnt':[],'user':[],'votes':[]}
 #Curently simply building the models and storing afterwards I have to compute the 
 #agreement rate
 if testAndVal:
@@ -119,8 +127,18 @@ else:
         file=filesList[fInd]
         filename=dataPath+'/'+file
         data,labels,features=fun.dataExtract(filename)
-        tempMv=[]
-        fun.majorityVote(clfs,data,labels,[fInd])
+        tempMv,tempAgmnt,tempVotes=fun.majorityVote(clfs,data,labels,[fInd])
+        summary['mv'].append(tempMv)
+        summary['agmnt'].append(tempAgmnt)
+        summary['user'].append(file)
+        summary['votes'].append(tempVotes)
 
+print('storing summary')
+filename=intermediatePath+'/'+'summary.plk'
+file=open(filename,'wb')
+pickle.dump(summary,file)
+file.close()
+print('summary stored at %s'%(filename))
+        
         
 

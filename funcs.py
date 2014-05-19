@@ -3,6 +3,7 @@ Created by Julian Ramos
 CMU - 4/3/14
 Model selection using unlabeled data
 '''
+import dataStats as dS
 import dataSearchUtils as dSu
 import dataReader as dR
 from scipy.stats import spearmanr
@@ -95,16 +96,43 @@ def majorityVote(clfs,testingData,testingLabels,ignore=[]):
     ignore is a list of the indexes of the classifiers to be ignored
     '''
     votes=[]
+    mV=[]
+    agmnt=[]
     
     for i in range(len(clfs)):
         if i not in ignore:
             temp=clfs[i]['classifier'][0].predict(testingData)
             votes.append(temp)
-    print('here')
-    
-    #Currently the prediction is working fine now I have to write a function
-    #that can calculate the majority vote and the agreement rate
-    #for each of the columns in tempALl
+    votes=np.array(votes)
+    for i in range(np.shape(votes)[1]):
+        temp=votes[:,i]
+        mx=len(temp)
+        cts=dS.counts(temp)
+        oCts=sorted(cts['counts'])
+        temp=dS.expSmooth(oCts,0.95)/mx
+        agmnt.append(temp)
+        
+        tmax=max(cts['counts'])
+        tind=np.argwhere(np.array(cts['counts'])==tmax)
+        
+        #Check whether there is a tie in the number of counts
+        #if there is one simply throw the dies
+        if len(tind)==1:
+            tind=np.argmax(cts['counts'])
+            mV.append(cts['vals'][tind])
+        else:
+            tind=np.random.permutation(tind)[0]
+            mV.append(cts['vals'][tind])
+            #Check the agreement and majority vote values
+            #I should be done with this section if it is
+            #working correctly
+            
+    return mV,agmnt,votes
+
+def ranking(agnmt,mVote):
+    '''
+    gives back the rank
+    '''
     
     
     
