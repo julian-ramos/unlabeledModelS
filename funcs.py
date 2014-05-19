@@ -129,15 +129,36 @@ def majorityVote(clfs,testingData,testingLabels,ignore=[]):
             
     return mV,agmnt,votes
 
-def ranking(agnmt,mVote):
+def ranking(agnmtRate,mVote,labels,agmntLvl=0):
     '''
-    gives back the rank
+    gives back the rank of each classifier at a given agmnt
+    level 
     '''
+    f1_scores=[]
+    inds=[]
+    ranks=[]
     
+    #Go through each of the experiments
+    for expId in range(len(labels)):
+        #Go through each of the classifiers
+        tempF1_score=[]
+        for clfId in range(np.shape(labels[expId])[0]):
+            tempF1_score.append(f1_score(mVote[expId],labels[expId][clfId,:]))
+        temp=[]
+        for i in range(np.shape(labels[expId])[0]+1):
+            if i!=expId:
+                temp.append(i)
+                
+        inds.append(temp)    
+        f1_scores.append(tempF1_score)
     
-    
-    
-    
+    #Ranking
+    for i in range(len(f1_scores)):
+        tempRanks=ranker(f1_scores[i])
+        temp=[inds[i][i2] for i2 in tempRanks]
+        ranks.append(temp)
+    return ranks
+
 
 def agreementRates(clf,valLabels,uLabels,plot=False):
     '''
@@ -228,7 +249,8 @@ def ranker(ranks):
     organized from highest to lowest values. It also
     takes into account when there are similar values
     and decides by chance in those cases. Though it only
-    works for ties at the top level
+    works for ties at the top level. ranks are the performance scores from 
+    which the ranks are going to be drawn
     ''' 
        
     inds=np.argsort(ranks)[::-1]
