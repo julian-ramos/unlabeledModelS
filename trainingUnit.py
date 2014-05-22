@@ -117,7 +117,7 @@ else:
 # 
 
 print('computing agreement levels...')
-summary={'mv':[],'agmnt':[],'user':[],'votes':[]}
+summary={'mv':[],'agmnt':[],'user':[],'votes':[],'labels':[]}
 #Curently simply building the models and storing afterwards I have to compute the 
 #agreement rate
 if testAndVal:
@@ -127,11 +127,12 @@ else:
         file=filesList[fInd]
         filename=dataPath+'/'+file
         data,labels,features=fun.dataExtract(filename)
-        tempMv,tempAgmnt,tempVotes=fun.majorityVote(clfs,data,labels,[fInd])
+        tempMv,tempAgmnt,tempVotes=fun.majorityVote(clfs,data,[fInd])
         summary['mv'].append(tempMv)
         summary['agmnt'].append(tempAgmnt)
         summary['user'].append(file)
         summary['votes'].append(tempVotes)
+        summary['labels'].append(labels)
 
 print('storing summary')
 filename=intermediatePath+'/'+'summary.plk'
