@@ -18,6 +18,41 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pylab as plt
 from sklearn.metrics import classification_report
 
+
+def izbickiSternScore(majorityVote,modelsIndex,realRanks):
+    '''
+    Calculate here the score described in Izbicki and stern paper
+    Learning with many experts: Model selection and sparsity
+    '''
+    score=[]
+    ranks=[]
+    spears=[]
+    modelsIndex=np.array(modelsIndex)
+    realRanks=np.array(realRanks)
+    for i in range(len(majorityVote)):
+        score.append([])
+        for i2 in range(np.shape(majorityVote[i])[1]):
+            temp=majorityVote[i][:,i2].tolist()
+            temp2=[sum([1 for i4 in temp if i3!=i4]) for i3 in temp]
+            score[-1].append(temp2)
+        sums=np.sum(score[-1],0)
+        ranksIndex=np.argsort(sums)
+        tempRank=modelsIndex[i,ranksIndex]
+        ranks.append(tempRank.tolist())
+        
+        
+        rank1,rank2=monotonicRanker(realRanks[i,:],tempRank)
+#         spears.append(spearmanr(realRanks[i,:],tempRank))
+        spears.append(spearmanr(rank1,rank2))
+        
+        
+        #Just need to finish a couple of things
+        #Include the agreement rate as a way to filter out the data and check on the
+        #effect it has on the IS score      
+            
+    
+    return score,ranks,spears
+
 def dataExtract(filename):
     '''
     Extracts the data for the activity recognition study
@@ -192,8 +227,21 @@ def ranking(agmntRate,mVote,predlabels,labels,agmntLvl=0):
         mrealRank=np.array(mrealRank)+1
         spears.append(spearmanr(mrank,mrealRank))
     
-    return ranks,realRanks,spears
+    return ranks,realRanks,spears,inds
 
+def monotonicRanker(rank1,rank2):
+    '''
+    This function takes an index based rank and then transforms it in to a 
+    monotonic rank. For example: If we have rank1=[3,2,1] which corresponds to model 3 is at the top, 2 is 
+    the second and so on. And we have rank2=[3,1,2] Then the monotic ranks correspond to
+    mRank1=[1,2,3] and mRank2=[1,3,2]
+    '''
+    rank1=np.array(rank1)
+    rank2=np.array(rank2)
+    mRank1=range(1,len(rank1)+1)
+    mRank2=[ int(np.argwhere(rank2==i))+1 for i in rank1]
+#     print(mRank1,mRank2)
+    return mRank1,mRank2
 
 def agreementRates(clf,valLabels,uLabels,plot=False):
     '''
@@ -367,9 +415,13 @@ def summaryGraphs(f1_score_mv_predval_agmnt,classifiersNum,spear,ranks,bestF1s,a
     
     
 if __name__=='__main__':
-    temp=[5,5,5,4,7,7,7,1,3,2]
-    print(np.argsort(temp)[::-1])
-    print(ranker(temp))
+#     temp=[5,5,5,4,7,7,7,1,3,2]
+#     print(np.argsort(temp)[::-1])
+#     print(ranker(temp))
+    temp=[3,2,1]
+    temp2=[3,1,2]
+    
+    print(monotonicRanker(temp,temp2))
     
         
         
@@ -380,7 +432,6 @@ if __name__=='__main__':
 
         
 
-    
     
     
     

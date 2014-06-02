@@ -14,6 +14,7 @@ modelsPath='F:/Activity_RS/Last data set/FeatureDataset/models'
 dataPath='F:/Activity_RS/Last data set/FeatureDataset/modelSelectionProjectData'
 filesList=os.listdir(dataPath)
 spearsa=[]
+spearsIS=[]
 
 filename=intermediatePath+'/'+'summary.plk'
 file=open(filename,'rb')
@@ -34,13 +35,29 @@ agmntLvls=np.arange(np.max(agmntLvls),1,0.1)
 
 
 for agmntVal in agmntLvls: 
-    ranksMv,realRanks,spears=fun.ranking(agmnt,mv,votes,labels,agmntLvl=agmntVal)
+    ranksMv,realRanks,spears,inds=fun.ranking(agmnt,mv,votes,labels,agmntLvl=agmntVal)
+    #I have to elimitante this inds because it is going to give trouble later
+    #inds should be part of the data extracted from the summary file
+    score,ranksIS,spearsis=fun.izbickiSternScore(votes,inds,realRanks)
+    spearsIS.append(np.array(spearsis)[:,0])
     spearsa.append(np.array(spears)[:,0])
     print(np.mean(np.array(spears),0))
     print(np.median(np.array(spears),0))
     print(np.std(np.array(spears),0))
     
-s=plt.boxplot(spearsa)
+plt.hold(True)
+s1=plt.boxplot(spearsa)
+s2=plt.boxplot(spearsIS)
+
+plt.setp(s1['boxes'], color='black')
+plt.setp(s1['whiskers'], color='black')
+plt.setp(s1['fliers'], color='black', marker='+')
+plt.setp(s1['medians'], color='black')
+
+plt.setp(s2['boxes'], color='red')
+plt.setp(s2['whiskers'], color='red')
+plt.setp(s2['fliers'], color='red', marker='+')
+plt.setp(s2['medians'], color='red')
 #     plt.legend(s,['%d'%(agmntVal)])
 plt.show()
 

@@ -45,10 +45,7 @@ if os.listdir(modelsPath)!=[]:
     filename=modelsPath+'/'+os.listdir(modelsPath)[0]
     f=open(filename,'rb')
     clfs=pickle.load(f)
-#     print('loading data ...')
-#     filename=intermediatePath+'/'+os.listdir(intermediatePath)[0]
-#     f=open(filename,'rb')
-#     allData=pickle.load(f)
+
     
 else:
     print('Models not found')
@@ -106,15 +103,7 @@ else:
         pickle.dump(allData,f)
         f.close()
  
-# mvAll=[]
-# #Calculating the majority vote for each of the data sets
-# 
-# 
-# for uId in range(len(allData)):
-#     for cId in range(len(clfs)):
-#         if uId!=cId:
-#             mvAll.append(clfs[cId]['classifier'].predict(allData['trainData'][uId]))
-# 
+
 
 print('computing agreement levels...')
 summary={'mv':[],'agmnt':[],'user':[],'votes':[],'labels':[]}
