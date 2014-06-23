@@ -4,6 +4,8 @@
 #for a leave one user out scheme
 # Copyright (C) Julian Ramos 2014
 #===============================================================================
+from sklearn.decomposition import PCA
+from sklearn import preprocessing
 from sklearn.metrics import f1_score
 import dataSearchUtils as dSu
 import funcs as fun
@@ -23,6 +25,23 @@ clfs=[]
 testAndVal=False
 # This option cuts out the quantity of classifiers to only 3 for fast evaluation
 fast=False
+# This option calculates and stores the models
+storeModels=False
+# This option calculates the agmnt levels
+computeAgmnt=False
+
+print('Experiment parameters:')
+print('>>>>>>>>>>>')
+print('Split the data in test and validation : %s'%(testAndVal))
+print('Calculate and store models : %s'%(storeModels))
+print('Fast calculation : %s'%(fast))
+print('Compute the agreement : %s'%(computeAgmnt))
+print('>>>>>>>>>>>')
+print('\n\n\n\n')
+
+
+
+
 cont=0
 if testAndVal:
     print('training,testing and validation data sets are going to be created')
@@ -32,9 +51,9 @@ else:
 
 allData={'user':[],'trainData':[],'trainLabels':[],\
          'testData':[],'testLabels':[],\
-         'valData':[],'valLabels':[],'features':[]\
+         'valData':[],'valLabels':[],'features':[],\
+         'pca':[]\
          }
-
 
 
 
@@ -55,8 +74,8 @@ else:
         #Data load
         filename=dataPath+'/'+file
         data,labels,features=fun.dataExtract(filename)
-        print('training model for file %s'%(file))
         if testAndVal==True:
+            print('training model for file %s'%(file))
             #This section if we want to have data split into training, testing and validation
     #         Data separation
             splitData=dmlPre.dataSplitBalancedClass(data, labels)
@@ -81,54 +100,80 @@ else:
         else:
             #The data is not splitted
             uLabels=np.unique(labels)
-            tempClf=fun.clfsEval(data,data[:100,],data[100:200,:],labels,labels[:100],labels[100:200],uLabels,classN=1)
-            #There's no need to store the data
-        clfs.append(tempClf)
+            if storeModels==True:
+                print('training model for file %s'%(file))
+                tempClf=fun.clfsEval(data,data[:100,],data[100:200,:],labels,labels[:100],labels[100:200],uLabels,classN=1)
+            else: 
+                print('Not calculating models for %s'%(filename))
+            allData['user'].append(file)
+#             allData['trainData'].append(data)
+#             allData['trainLabels'].append(labels)
+#             allData['features'].append(features)
+
+            #Computing the eigenVectors of the data set
+            pca=PCA()
+            allData['pca'].append(pca.fit(data))
+            
+            
+            
+            
+        if storeModels==True:
+            clfs.append(tempClf)
         cont+=1
         if cont==6 and fast==True:
             break
         
 
     # Storing all the classifiers and results
-    print('Storing the models')    
-    filename=modelsPath+'/'+'models.plk'
-    f=open(filename,'wb')
-    pickle.dump(clfs,f)
-    f.close()
+    if storeModels==True:
+        print('Storing the models')    
+        filename=modelsPath+'/'+'models.plk'
+        f=open(filename,'wb')
+        pickle.dump(clfs,f)
+        f.close()
+        
     if testAndVal==True:
         # Storing the data
-        print('Storing the data')
+        print('Storing the data in')
         filename=intermediatePath+'/'+'data.plk'
+        print(filename)
         f=open(filename,'wb')
         pickle.dump(allData,f)
         f.close()
+    else:
+        print('Storing data in')
+        filename=intermediatePath+'/'+'data.plk'
+        print(filename)
+        f=open(filename,'wb')
+        pickle.dump(allData,f)
+        f.close()
+        print('data stored')
  
+if computeAgmnt==True:
 
-
-print('computing agreement levels...')
-summary={'mv':[],'agmnt':[],'user':[],'votes':[],'labels':[]}
-#Curently simply building the models and storing afterwards I have to compute the 
-#agreement rate
-if testAndVal:
-    print('not implemented')
-else:
-    for fInd in range(len(filesList)):
-        file=filesList[fInd]
-        filename=dataPath+'/'+file
-        data,labels,features=fun.dataExtract(filename)
-        tempMv,tempAgmnt,tempVotes=fun.majorityVote(clfs,data,[fInd])
-        summary['mv'].append(tempMv)
-        summary['agmnt'].append(tempAgmnt)
-        summary['user'].append(file)
-        summary['votes'].append(tempVotes)
-        summary['labels'].append(labels)
-
-print('storing summary')
-filename=intermediatePath+'/'+'summary.plk'
-file=open(filename,'wb')
-pickle.dump(summary,file)
-file.close()
-print('summary stored at %s'%(filename))
+    print('computing agreement levels...')
+    summary={'mv':[],'agmnt':[],'user':[],'votes':[],'labels':[]}
+    #Curently simply building the models and storing afterwards I have to compute the 
+    #agreement rate
+    if testAndVal:
+        print('not implemented')
+    else:
+        for fInd in range(len(filesList)):
+            file=filesList[fInd]
+            filename=dataPath+'/'+file
+            data,labels,features=fun.dataExtract(filename)
+            tempMv,tempAgmnt,tempVotes=fun.majorityVote(clfs,data,[fInd])
+            summary['mv'].append(tempMv)
+            summary['agmnt'].append(tempAgmnt)
+            summary['user'].append(file)
+            summary['votes'].append(tempVotes)
+            summary['labels'].append(labels)
+    
+    print('storing summary')
+    filename=intermediatePath+'/'+'summary.plk'
+    file=open(filename,'wb')
+    pickle.dump(summary,file)
+    file.close()
+    print('summary stored at %s'%(filename))
         
         
-
